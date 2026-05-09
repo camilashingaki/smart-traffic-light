@@ -1,0 +1,17 @@
+# Dados gerados pelo gerador de cenários (grandes volumes — ignorados por padrão)
+scenarios/
+models/
+
+# TensorBoard
+runs/
+logs/
+
+# Sistema (Windows / Vim)
+Thumbs.db
+*.swp
+*.swo
+
+# Pytest (cache local)
+.pytest_cache/
+.coverage
+htmlcov/

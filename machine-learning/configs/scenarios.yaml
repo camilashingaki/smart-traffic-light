@@ -1,0 +1,121 @@
+# Calibração do gerador de cenários.
+# Todas as taxas são em chegadas/tick (1 tick = 5s).
+# Altere apenas este arquivo para recalibrar sem mexer no código.
+
+# ── Faixas horárias ──────────────────────────────────────────────────────────
+# Intervalo [start_hour, end_hour) em horas decimais (ex: 7.5 = 7h30)
+time_band_boundaries:
+  madrugada:       {start: 0.0,  end: 6.0}
+  manha_tranquila: {start: 6.0,  end: 7.5}
+  pico_manha:      {start: 7.5,  end: 9.5}
+  meio_manha:      {start: 9.5,  end: 12.0}
+  pico_tarde:      {start: 12.0, end: 14.0}
+  tarde:           {start: 14.0, end: 17.5}
+  pico_noite:      {start: 17.5, end: 19.5}
+  noite:           {start: 19.5, end: 24.0}
+
+# ── Taxas base por (tipo de dia × faixa horária × fila) ─────────────────────
+arrival_rates:
+  util:
+    madrugada:
+      veh_ns: 0.10
+      ped_l:  0.02
+      ped_o:  0.02
+    manha_tranquila:
+      veh_ns: 0.50
+      ped_l:  0.10
+      ped_o:  0.10
+    pico_manha:
+      veh_ns: 2.00
+      ped_l:  0.50
+      ped_o:  0.50
+    meio_manha:
+      veh_ns: 0.80
+      ped_l:  0.30
+      ped_o:  0.30
+    pico_tarde:
+      veh_ns: 1.20
+      ped_l:  0.80
+      ped_o:  0.80
+    tarde:
+      veh_ns: 0.90
+      ped_l:  0.40
+      ped_o:  0.40
+    pico_noite:
+      veh_ns: 2.20
+      ped_l:  0.60
+      ped_o:  0.60
+    noite:
+      veh_ns: 0.50
+      ped_l:  0.20
+      ped_o:  0.20
+
+  fds:
+    madrugada:
+      veh_ns: 0.15
+      ped_l:  0.03
+      ped_o:  0.03
+    manha_tranquila:
+      veh_ns: 0.30
+      ped_l:  0.10
+      ped_o:  0.10
+    pico_manha:
+      veh_ns: 0.80
+      ped_l:  0.40
+      ped_o:  0.40
+    meio_manha:
+      veh_ns: 1.00
+      ped_l:  0.60
+      ped_o:  0.60
+    pico_tarde:
+      veh_ns: 1.00
+      ped_l:  1.20
+      ped_o:  1.20
+    tarde:
+      veh_ns: 0.90
+      ped_l:  0.80
+      ped_o:  0.80
+    pico_noite:
+      veh_ns: 0.80
+      ped_l:  0.50
+      ped_o:  0.50
+    noite:
+      veh_ns: 0.40
+      ped_l:  0.20
+      ped_o:  0.20
+
+# ── Multiplicadores por família ──────────────────────────────────────────────
+# veh_multiplier: escala as taxas de veículos
+# ped_multiplier: escala as taxas de pedestres
+# var_multiplier: amplifica o desvio padrão da distribuição Poisson (via overdispersion)
+families:
+  equilibrado:
+    veh_multiplier: 1.0
+    ped_multiplier: 1.0
+    var_multiplier: 1.0
+
+  pico_veic:
+    veh_multiplier: 1.8
+    ped_multiplier: 0.6
+    var_multiplier: 1.2
+
+  pico_ped:
+    veh_multiplier: 0.6
+    ped_multiplier: 1.8
+    var_multiplier: 1.2
+
+  baixa_mov:
+    veh_multiplier: 0.4
+    ped_multiplier: 0.4
+    var_multiplier: 0.8
+
+  imprevisivel:
+    veh_multiplier: 1.0
+    ped_multiplier: 1.0
+    var_multiplier: 3.0
+
+# ── Parâmetros de geração ────────────────────────────────────────────────────
+generation:
+  ticks_per_day: 17280          # 24h × 720 ticks/hora
+  default_num_scenarios: 50     # cenários por rodada de geração padrão
+  calibrator_version: "1.0"

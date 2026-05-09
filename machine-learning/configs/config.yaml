@@ -1,0 +1,26 @@
+# Parâmetros gerais do sistema.
+# NUNCA hard-code estes valores no código — sempre leia daqui.
+
+simulation:
+  tick_seconds: 5                          # 1 tick = 5 segundos reais simulados
+  min_green_cars_ticks: 3                  # mínimo de ticks em Fase A (15s)
+  min_green_pedestrians_ticks: 2           # mínimo de ticks em Fase B (10s)
+  yellow_visual_seconds: 3                 # duração do amarelo (apenas visual, sem efeito funcional)
+  num_car_lanes: 2                         # faixas paralelas N→S
+  saturation_flow_veh_per_lane_per_tick: 1 # carros que passam por faixa por tick quando verde
+  saturation_flow_ped_per_side_per_tick: 3 # pedestres por lado por tick quando verde
+
+fixed_time_controller:
+  phase_a_ticks: 12   # duração padrão da Fase A no benchmark (60s)
+  phase_b_ticks: 6    # duração padrão da Fase B no benchmark (30s)
+
+training:
+  episode_ticks: 360       # 30 minutos por episódio de treino
+
+evaluation:
+  episode_ticks: 17280     # 1 dia inteiro por episódio de avaliação
+  num_scenarios: 30        # cenários distintos usados na avaliação final
+
+thresholds:
+  wait_ceiling_cars_seconds: 90       # teto de espera para carros (penalidade extra acima disso)
+  wait_ceiling_pedestrians_seconds: 60 # teto de espera para pedestres
