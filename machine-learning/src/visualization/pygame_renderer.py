@@ -30,6 +30,7 @@ _PED_COL          = (90,  195, 255)
 _TEXT             = (215, 215, 215)
 _TEXT_WARN        = (255,  75,  75)
 _TEXT_YELLOW      = (255, 200,  50)
+_COUNTER_COL      = (160, 210, 255)   # azul-gelo para contadores de fila
 _HUD_BG           = (20,  20,  35)
 _CTRL_BG          = (22,  22,  38)
 _BTN_ACTIVE       = (55,  100, 185)
@@ -150,6 +151,7 @@ class CrossingRenderer:
         self._draw_zebra(surface)
         self._draw_cars(surface, state)
         self._draw_peds(surface, state)
+        self._draw_queue_counters(surface, state)
         self._draw_traffic_light(surface, state, is_yellow)
         self._draw_ped_signals(surface, state, is_yellow)
         self._draw_phase_label(surface, state, is_yellow)
@@ -233,6 +235,26 @@ class CrossingRenderer:
 
         draw_cluster(state["ped_o"]["size"], self._ped_w_x, grow_right=False)
         draw_cluster(state["ped_l"]["size"], self._ped_e_x, grow_right=True)
+
+    # ── Contadores de fila ───────────────────────────────────────────────────
+
+    def _draw_queue_counters(self, surface: pygame.Surface, state: dict[str, Any]) -> None:
+        """Exibe contagem numérica de cada fila em texto grande no cruzamento."""
+        n_car   = state["veh_ns"]["size"]
+        n_ped_e = state["ped_l"]["size"]
+        n_ped_o = state["ped_o"]["size"]
+
+        # Carros — centrado na via, topo da área do cruzamento
+        t_car = self._fn_lg.render(f"Carros: {n_car}", True, _COUNTER_COL)
+        surface.blit(t_car, (self._road_cx - t_car.get_width() // 2, self._cx_y + 8))
+
+        # Pedestres leste — à direita dos círculos (folga de 100 px a partir de _road_r)
+        t_pe = self._fn_lg.render(f"Ped L: {n_ped_e}", True, _COUNTER_COL)
+        surface.blit(t_pe, (self._road_r + 100, self._zebra_cy - 70))
+
+        # Pedestres oeste — alinhado à direita, encostado à margem oeste da via
+        t_po = self._fn_lg.render(f"Ped O: {n_ped_o}", True, _COUNTER_COL)
+        surface.blit(t_po, (self._road_l - 14 - t_po.get_width(), self._zebra_cy - 70))
 
     # ── Semáforos ────────────────────────────────────────────────────────────
 
