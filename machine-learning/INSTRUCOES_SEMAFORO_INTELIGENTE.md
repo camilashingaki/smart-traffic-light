@@ -238,7 +238,8 @@ semaforo-inteligente/
 │   │   ├── __init__.py
 │   │   ├── crossing.py                  # cruzamento, filas, fases
 │   │   ├── controllers.py               # controlador de tempo fixo
-│   │   └── metrics.py                   # cálculo de métricas
+│   │   ├── metrics.py                   # cálculo de métricas
+│   │   └── simulation_loop.py           # orquestra avanço de ticks, controla velocidade/pausa, conecta engine a renderer e plots sem que esses se conheçam
 │   ├── generator/
 │   │   ├── __init__.py
 │   │   └── scenario_generator.py
@@ -256,6 +257,7 @@ semaforo-inteligente/
 ├── scripts/
 │   ├── run_benchmark.py
 │   ├── generate_scenarios.py
+│   ├── run_visual_demo.py               # demo visual Fase 2 (Pygame + matplotlib)
 │   ├── train_agent.py
 │   └── evaluate_agent.py
 ├── scenarios/                           # CSVs gerados (gitignored)
@@ -309,3 +311,4 @@ semaforo-inteligente/
 | Versão inicial | Documento criado com decisões fechadas das fases de planejamento. |
 | 2026-05-09 | Fase 1 concluída. Migração para repositório do grupo (camilashingaki/smart-traffic-light, subpasta machine-learning/). Adicionada Fase 3.5 — Checkpoint pré-ML. |
 | 2026-05-12 | Fase 1 aprovada pelo usuário. Critério de aceite validado em dois testes: (a) demo com taxa 2.5 veh/tick mostrando filas crescentes como esperado em cenário sobrealimentado; (b) demo com taxa 1.0 veh/tick mostrando filas estabilizadas e espera máxima de carros convergindo para ~35s, coerente com o ciclo do controlador fixo. |
+| 2026-05-12 | Início da Fase 2. Adicionado `src/simulation/simulation_loop.py` à estrutura de pastas (orquestra ticks, velocidade/pausa, desacopla engine de renderer e plots). Adicionado `scripts/run_visual_demo.py`. |
