@@ -11,8 +11,8 @@ simulation:
   saturation_flow_ped_per_side_per_tick: 3 # pedestres por lado por tick quando verde
 
 fixed_time_controller:
-  phase_a_ticks: 12   # duração padrão da Fase A no benchmark (60s)
-  phase_b_ticks: 6    # duração padrão da Fase B no benchmark (30s)
+  phase_a_ticks: 9    # duração oficial do benchmark — Fase A (45s)
+  phase_b_ticks: 5    # duração oficial do benchmark — Fase B (25s)
 
 training:
   episode_ticks: 360       # 30 minutos por episódio de treino
@@ -24,3 +24,14 @@ evaluation:
 thresholds:
   wait_ceiling_cars_seconds: 90       # teto de espera para carros (penalidade extra acima disso)
   wait_ceiling_pedestrians_seconds: 60 # teto de espera para pedestres
+
+demo_arrival_rate:
+  vehicles: 1.0           # chegadas médias de veículos por tick (placeholder até Fase 3)
+  pedestrians_east: 0.3   # chegadas médias de pedestres lado leste por tick
+  pedestrians_west: 0.3   # chegadas médias de pedestres lado oeste por tick
+
+visualization:
+  window_width: 1280
+  window_height: 720
+  plot_update_interval_ticks: 5   # re-renderiza gráficos a cada N ticks
+  history_length_ticks: 360       # ticks mantidos no histórico dos gráficos (30 min)
