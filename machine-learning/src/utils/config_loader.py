@@ -1,5 +1,6 @@
 """Utilitário para carregar arquivos YAML de configuração."""
 
+from __future__ import annotations
 from pathlib import Path
 from typing import Any
 
