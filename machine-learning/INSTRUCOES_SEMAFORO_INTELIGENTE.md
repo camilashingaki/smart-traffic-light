@@ -308,3 +308,4 @@ semaforo-inteligente/
 |---|---|
 | Versão inicial | Documento criado com decisões fechadas das fases de planejamento. |
 | 2026-05-09 | Fase 1 concluída. Migração para repositório do grupo (camilashingaki/smart-traffic-light, subpasta machine-learning/). Adicionada Fase 3.5 — Checkpoint pré-ML. |
+| 2026-05-12 | Fase 1 aprovada pelo usuário. Critério de aceite validado em dois testes: (a) demo com taxa 2.5 veh/tick mostrando filas crescentes como esperado em cenário sobrealimentado; (b) demo com taxa 1.0 veh/tick mostrando filas estabilizadas e espera máxima de carros convergindo para ~35s, coerente com o ciclo do controlador fixo. |
