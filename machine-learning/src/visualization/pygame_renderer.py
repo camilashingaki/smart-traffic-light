@@ -286,13 +286,16 @@ class CrossingRenderer:
         em velocidades altas o valor mais recente sempre apareça por 1s completo.
         """
         expire_at = pygame.time.get_ticks() + _FLASH_MS
+        # contador de carros ocupa cx_y+8 .. cx_y+30 → flashes ficam abaixo (cx_y+36+)
+        # contadores de ped ocupam zebra_cy-70 .. zebra_cy-48 →
+        #   +N fica 40 px acima (zebra_cy-110) e -N fica 8 px abaixo (zebra_cy-40)
         specs = [
-            ("veh_ns", "+", arrivals, self._road_cx + 90, self._cx_y + 8,       _FLASH_ARRIVAL, False),
-            ("veh_ns", "-", drains,   self._road_cx + 90, self._cx_y + 28,      _FLASH_DRAIN,   False),
-            ("ped_l",  "+", arrivals, self._road_r + 100,  self._zebra_cy - 96, _FLASH_ARRIVAL, False),
-            ("ped_l",  "-", drains,   self._road_r + 100,  self._zebra_cy - 74, _FLASH_DRAIN,   False),
-            ("ped_o",  "+", arrivals, self._road_l - 14,   self._zebra_cy - 96, _FLASH_ARRIVAL, True),
-            ("ped_o",  "-", drains,   self._road_l - 14,   self._zebra_cy - 74, _FLASH_DRAIN,   True),
+            ("veh_ns", "+", arrivals, self._road_cx + 90, self._cx_y + 36,       _FLASH_ARRIVAL, False),
+            ("veh_ns", "-", drains,   self._road_cx + 90, self._cx_y + 58,       _FLASH_DRAIN,   False),
+            ("ped_l",  "+", arrivals, self._road_r + 100,  self._zebra_cy - 110, _FLASH_ARRIVAL, False),
+            ("ped_l",  "-", drains,   self._road_r + 100,  self._zebra_cy - 40,  _FLASH_DRAIN,   False),
+            ("ped_o",  "+", arrivals, self._road_l - 14,   self._zebra_cy - 110, _FLASH_ARRIVAL, True),
+            ("ped_o",  "-", drains,   self._road_l - 14,   self._zebra_cy - 40,  _FLASH_DRAIN,   True),
         ]
         for key, sign, data, x, y, color, right_align in specs:
             n = data.get(key, 0)
