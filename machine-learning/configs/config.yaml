@@ -7,8 +7,8 @@ simulation:
   min_green_pedestrians_ticks: 2           # mínimo de ticks em Fase B (10s)
   yellow_visual_seconds: 3                 # duração do amarelo (apenas visual, sem efeito funcional)
   num_car_lanes: 2                         # faixas paralelas N→S
-  saturation_flow_veh_per_lane_per_tick: 1 # carros que passam por faixa por tick quando verde
-  saturation_flow_ped_per_side_per_tick: 3 # pedestres por lado por tick quando verde
+  saturation_flow_veh_per_lane_per_tick: 1.5 # carros que passam por faixa por tick quando verde (fracionário — usa crédito acumulado)
+  saturation_flow_ped_per_side_per_tick: 4   # pedestres por lado por tick quando verde
 
 fixed_time_controller:
   phase_a_ticks: 9    # duração oficial do benchmark — Fase A (45s)

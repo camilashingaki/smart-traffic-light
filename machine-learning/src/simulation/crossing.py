@@ -113,6 +113,7 @@ class Crossing:
         self.current_tick: int = 0
         self._pending_switch: bool = False
         self._served_this_tick: dict[str, list[int]] = {"veh_ns": [], "ped_l": [], "ped_o": []}
+        self._lane_credits: list[float] = [0.0] * self._cfg["num_car_lanes"]
 
     # ------------------------------------------------------------------
     # Restrições de fase
@@ -195,23 +196,34 @@ class Crossing:
         return self.get_state()
 
     def _process_flow(self) -> None:
-        """Drena entidades das filas que têm verde, respeitando a capacidade de saturação."""
+        """
+        Drena entidades das filas com verde.
+        Carros: cada faixa acumula crédito fracionário (ex: 1.5/tick); drena floor(crédito)
+        por tick e subtrai esse valor do crédito. O crédito reseta ao mudar de fase.
+        Pedestres: capacidade inteira, sem crédito acumulado.
+        """
         if self.current_phase == Phase.A:
-            flow = (
-                self._cfg["saturation_flow_veh_per_lane_per_tick"]
-                * self._cfg["num_car_lanes"]
-            )
-            self._served_this_tick["veh_ns"] = self.veh_ns.drain(flow)
+            flow_per_lane: float = self._cfg["saturation_flow_veh_per_lane_per_tick"]
+            served_veh: list[int] = []
+            for i in range(self._cfg["num_car_lanes"]):
+                self._lane_credits[i] += flow_per_lane
+                drainable = int(self._lane_credits[i])
+                if drainable > 0:
+                    drained = self.veh_ns.drain(drainable)
+                    self._lane_credits[i] -= drainable
+                    served_veh.extend(drained)
+            self._served_this_tick["veh_ns"] = served_veh
         else:
-            flow_per_side = self._cfg["saturation_flow_ped_per_side_per_tick"]
+            flow_per_side: int = self._cfg["saturation_flow_ped_per_side_per_tick"]
             self._served_this_tick["ped_l"] = self.ped_l.drain(flow_per_side)
             self._served_this_tick["ped_o"] = self.ped_o.drain(flow_per_side)
 
     def _execute_phase_switch(self) -> None:
-        """Inverte a fase e zera o contador de ticks na fase."""
+        """Inverte a fase, zera o contador de ticks e reseta os créditos de drenagem por faixa."""
         old = self.current_phase
         self.current_phase = Phase.B if self.current_phase == Phase.A else Phase.A
         self.ticks_in_phase = 0
+        self._lane_credits = [0.0] * self._cfg["num_car_lanes"]
         logger.debug(
             "tick %d: fase %s → %s", self.current_tick, old.value, self.current_phase.value
         )
@@ -234,6 +246,7 @@ class Crossing:
         self.current_tick = 0
         self._pending_switch = False
         self._served_this_tick = {"veh_ns": [], "ped_l": [], "ped_o": []}
+        self._lane_credits = [0.0] * self._cfg["num_car_lanes"]
         return self.get_state()
 
     def get_state(self) -> dict[str, Any]:

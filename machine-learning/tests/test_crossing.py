@@ -13,8 +13,8 @@ def sim_cfg() -> dict:
         "min_green_pedestrians_ticks": 2,
         "yellow_visual_seconds": 3,
         "num_car_lanes": 2,
-        "saturation_flow_veh_per_lane_per_tick": 1,
-        "saturation_flow_ped_per_side_per_tick": 3,
+        "saturation_flow_veh_per_lane_per_tick": 1.5,
+        "saturation_flow_ped_per_side_per_tick": 4,
     }
 
 
@@ -90,7 +90,7 @@ class TestCrossing:
 
     def test_arrivals_added_and_partially_drained(self, sim_cfg):
         c = Crossing(sim_cfg)
-        # Fase A: saturation = 1 carro/faixa × 2 faixas = 2/tick
+        # Fase A tick 1: crédito 0→1.5 por faixa → drena floor(1.5)=1 por faixa = 2 total
         # 5 chegam, 2 drenam → 3 restam, espera=1 após increment
         state = c.step({"veh_ns": 5, "ped_l": 0, "ped_o": 0}, action=0)
         assert state["veh_ns"]["size"] == 3
@@ -105,10 +105,10 @@ class TestCrossing:
         # Na próxima step a troca entra em vigor (Fase B)
         # Adiciona pedestres e verifica escoamento
         state = c.step({"ped_l": 5, "ped_o": 5}, action=0)
-        # Fase B: 3 por lado drenam; 5-3=2 restam por lado
+        # Fase B: 4 por lado drenam; 5-4=1 restam por lado
         assert state["phase"] == "B"
-        assert state["ped_l"]["size"] == 2
-        assert state["ped_o"]["size"] == 2
+        assert state["ped_l"]["size"] == 1
+        assert state["ped_o"]["size"] == 1
 
     def test_min_green_time_enforced_phase_a(self, sim_cfg):
         c = Crossing(sim_cfg)
@@ -160,3 +160,71 @@ class TestCrossing:
         assert state["ped_l"]["size"] == 0
         assert state["phase"] == "A"
         assert state["ticks_in_phase"] == 0
+
+
+# ── Drenagem fracionária ──────────────────────────────────────────────────────
+
+class TestFractionalDrain:
+    """Valida a lógica de crédito fracionário por faixa (saturation_flow=1.5/faixa)."""
+
+    def test_average_throughput_converges(self, sim_cfg):
+        """Média de carros drenados deve convergir para 1.5/faixa/tick = 3.0/tick total."""
+        c = Crossing(sim_cfg)
+        # Encher a fila para que nunca fique vazia durante o teste
+        c.veh_ns.add_arrivals(10_000)
+        total_drained = 0
+        N = 1_000
+        for _ in range(N):
+            state = c.step({}, action=0)
+            total_drained += len(state["served_this_tick"]["veh_ns"])
+        avg = total_drained / N
+        assert abs(avg - 3.0) < 0.05, (
+            f"Throughput médio esperado 3.0 carros/tick, obtido {avg:.4f}"
+        )
+
+    def test_credits_reset_on_phase_switch(self, sim_cfg):
+        """
+        Após troca de fase (A→B→A), o 1º tick em Fase A deve drenar floor(0+1.5)×2 = 2 carros,
+        e não floor(0.5+1.5)×2 = 4 (o que aconteceria se o crédito não fosse resetado).
+
+        Cenário:
+          - Calls 1–4: Phase.A sem troca (crédito alterna 0.5/0.0 ao final de cada tick)
+          - Call 5: ticks_in=4 → elegível; solicita troca → crédito termina em [0.5, 0.5]
+          - Call 6: troca executa (A→B); créditos devem resetar para [0.0, 0.0]
+          - Calls 7–8: Phase.B (mínimo 2 ticks); call 8 solicita volta para A
+          - Call 9: troca B→A executa; créditos resetam novamente
+          - Call 10: 1º tick real em Phase.A — deve drenar exatamente 2 (1/faixa)
+        """
+        c = Crossing(sim_cfg)
+        c.veh_ns.add_arrivals(10_000)
+
+        # Calls 1–4: ficar em Phase.A, não solicitar troca
+        for _ in range(4):
+            c.step({}, action=0)
+
+        # Call 5: ticks_in_phase=4 → elegível; solicitar troca
+        # Crédito ao final deste tick: [0.0+1.5=1.5→drain1→0.5, idem] = [0.5, 0.5]
+        state = c.step({}, action=1)
+        assert state["pending_switch"], "Switch deveria estar pendente após call 5"
+
+        # Call 6: troca A→B executa; créditos resetam para [0.0, 0.0]
+        state = c.step({}, action=0)
+        assert state["phase"] == "B", "Deveria estar em Phase.B após call 6"
+
+        # Call 7: Phase.B tick 1 (ticks_in=1 após incremento; mínimo=2, não elegível)
+        c.step({}, action=0)
+
+        # Call 8: Phase.B tick 2 (ticks_in=2 → elegível); solicitar troca B→A
+        state = c.step({}, action=1)
+        assert state["pending_switch"], "Switch B→A deveria estar pendente após call 8"
+
+        # Call 9: troca B→A executa (créditos resetam para [0,0]) e, no mesmo step,
+        # process_flow em Phase.A usa crédito zerado: [0+1.5=1.5]→drain1 por faixa = 2 total.
+        # Se o crédito NÃO fosse resetado, ficaria [0.5+1.5=2.0]→drain2 por faixa = 4 total.
+        state = c.step({}, action=0)
+        assert state["phase"] == "A", "Deveria estar em Phase.A após call 9"
+        drained = len(state["served_this_tick"]["veh_ns"])
+        assert drained == 2, (
+            f"1º tick em Phase.A pós-switch deve drenar 2 carros (1/faixa com crédito=0); "
+            f"obtido {drained}. Se fosse 4, o crédito não foi resetado corretamente."
+        )
