@@ -152,6 +152,8 @@ def main() -> None:
             cfg_fixed          = ft_cfg,
             cfg_thresholds     = thr_cfg,
             tick_seconds       = tick_s,
+            arrivals           = loop.last_arrivals,
+            drains             = loop.last_drains,
         )
         screen.blit(cx_surface, (0, 0))
 

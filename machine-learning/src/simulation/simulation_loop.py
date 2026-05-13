@@ -42,6 +42,8 @@ class SimulationLoop:
         self.paused: bool = False
         self._time_in_tick: float = 0.0
         self.state: dict[str, Any] = crossing.reset()
+        self.last_arrivals: dict[str, int] = {"veh_ns": 0, "ped_l": 0, "ped_o": 0}
+        self.last_drains: dict[str, int]   = {"veh_ns": 0, "ped_l": 0, "ped_o": 0}
 
     # ── Loop principal ───────────────────────────────────────────────────────
 
@@ -61,8 +63,17 @@ class SimulationLoop:
 
     def _advance_tick(self) -> None:
         arrivals = self._arrivals_fn(self.state["tick"])
-        action = self._controller.decide(self.state)
+        prev_veh = self.state["veh_ns"]["size"]
+        prev_pl  = self.state["ped_l"]["size"]
+        prev_po  = self.state["ped_o"]["size"]
+        action   = self._controller.decide(self.state)
         self.state = self._crossing.step(arrivals, action)
+        self.last_arrivals = arrivals
+        self.last_drains = {
+            "veh_ns": max(0, prev_veh + arrivals["veh_ns"] - self.state["veh_ns"]["size"]),
+            "ped_l":  max(0, prev_pl  + arrivals["ped_l"]  - self.state["ped_l"]["size"]),
+            "ped_o":  max(0, prev_po  + arrivals["ped_o"]  - self.state["ped_o"]["size"]),
+        }
         if self._on_tick:
             self._on_tick(self.state)
 
@@ -87,6 +98,8 @@ class SimulationLoop:
         """Reinicia a simulação do zero (filas vazias, tick 0, fase A)."""
         self._time_in_tick = 0.0
         self.state = self._crossing.reset()
+        self.last_arrivals = {"veh_ns": 0, "ped_l": 0, "ped_o": 0}
+        self.last_drains   = {"veh_ns": 0, "ped_l": 0, "ped_o": 0}
 
     # ── Propriedades de estado visual ────────────────────────────────────────
 

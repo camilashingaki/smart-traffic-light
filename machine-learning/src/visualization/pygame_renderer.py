@@ -31,6 +31,9 @@ _TEXT             = (215, 215, 215)
 _TEXT_WARN        = (255,  75,  75)
 _TEXT_YELLOW      = (255, 200,  50)
 _COUNTER_COL      = (160, 210, 255)   # azul-gelo para contadores de fila
+_FLASH_ARRIVAL    = (255, 235, 60)    # amarelo claro — chegadas
+_FLASH_DRAIN      = (70,  220, 220)   # ciano claro   — escoamentos
+_FLASH_FRAMES     = 5                 # frames de vida de cada indicador
 _HUD_BG           = (20,  20,  35)
 _CTRL_BG          = (22,  22,  38)
 _BTN_ACTIVE       = (55,  100, 185)
@@ -102,6 +105,9 @@ class CrossingRenderer:
         self._buttons: dict[str, pygame.Rect] = {}
         self._build_buttons()
 
+        self._flashes: list[dict] = []
+        self._last_tick_seen: int = -1
+
     # ── Botões ───────────────────────────────────────────────────────────────
 
     def _build_buttons(self) -> None:
@@ -131,6 +137,8 @@ class CrossingRenderer:
         cfg_fixed: dict[str, Any],
         cfg_thresholds: dict[str, Any],
         tick_seconds: float,
+        arrivals: dict[str, int] | None = None,
+        drains: dict[str, int] | None = None,
     ) -> None:
         """
         Renderiza o painel completo do cruzamento na Surface fornecida.
@@ -145,13 +153,25 @@ class CrossingRenderer:
         - cfg_fixed: seção fixed_time_controller do config
         - cfg_thresholds: seção thresholds do config
         - tick_seconds: duração de um tick em segundos
+        - arrivals: chegadas do último tick por fila (para indicadores piscantes)
+        - drains: escoamentos do último tick por fila (para indicadores piscantes)
         """
+        # Detecta novo tick e cria flashes; lida com reset (tick regressivo)
+        if arrivals is not None and drains is not None:
+            tick = state["tick"]
+            if tick < self._last_tick_seen:
+                self._flashes = []
+            elif tick != self._last_tick_seen and self._last_tick_seen >= 0:
+                self._spawn_flashes(arrivals, drains)
+            self._last_tick_seen = tick
+
         surface.fill(_BG)
         self._draw_road(surface)
         self._draw_zebra(surface)
         self._draw_cars(surface, state)
         self._draw_peds(surface, state)
         self._draw_queue_counters(surface, state)
+        self._draw_flashes(surface)
         self._draw_traffic_light(surface, state, is_yellow)
         self._draw_ped_signals(surface, state, is_yellow)
         self._draw_phase_label(surface, state, is_yellow)
@@ -255,6 +275,42 @@ class CrossingRenderer:
         # Pedestres oeste — alinhado à direita, encostado à margem oeste da via
         t_po = self._fn_lg.render(f"Ped O: {n_ped_o}", True, _COUNTER_COL)
         surface.blit(t_po, (self._road_l - 14 - t_po.get_width(), self._zebra_cy - 70))
+
+    # ── Indicadores de chegada / escoamento ─────────────────────────────────
+
+    def _spawn_flashes(self, arrivals: dict[str, int], drains: dict[str, int]) -> None:
+        """Cria indicadores piscantes para chegadas (+N) e escoamentos (-N) do tick."""
+        # (queue_key, sinal, dicionário, x, y, cor, alinhar_direita)
+        specs = [
+            ("veh_ns", "+", arrivals, self._road_cx + 90, self._cx_y + 8,           _FLASH_ARRIVAL, False),
+            ("veh_ns", "-", drains,   self._road_cx + 90, self._cx_y + 28,          _FLASH_DRAIN,   False),
+            ("ped_l",  "+", arrivals, self._road_r + 100,  self._zebra_cy - 96,     _FLASH_ARRIVAL, False),
+            ("ped_l",  "-", drains,   self._road_r + 100,  self._zebra_cy - 74,     _FLASH_DRAIN,   False),
+            ("ped_o",  "+", arrivals, self._road_l - 14,   self._zebra_cy - 96,     _FLASH_ARRIVAL, True),
+            ("ped_o",  "-", drains,   self._road_l - 14,   self._zebra_cy - 74,     _FLASH_DRAIN,   True),
+        ]
+        for key, sign, data, x, y, color, right_align in specs:
+            n = data.get(key, 0)
+            if n > 0:
+                self._flashes.append({
+                    "text": f"{sign}{n}",
+                    "x": x, "y": y,
+                    "color": color,
+                    "right_align": right_align,
+                    "frames_left": _FLASH_FRAMES,
+                })
+
+    def _draw_flashes(self, surface: pygame.Surface) -> None:
+        """Renderiza e decrementa indicadores piscantes ativos."""
+        alive = []
+        for fl in self._flashes:
+            txt = self._fn_md.render(fl["text"], True, fl["color"])
+            x = fl["x"] - (txt.get_width() if fl["right_align"] else 0)
+            surface.blit(txt, (x, fl["y"]))
+            fl["frames_left"] -= 1
+            if fl["frames_left"] > 0:
+                alive.append(fl)
+        self._flashes = alive
 
     # ── Semáforos ────────────────────────────────────────────────────────────
 
