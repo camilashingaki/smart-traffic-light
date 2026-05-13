@@ -72,7 +72,7 @@ class ScenarioGenerator:
 
         day_rates = self._cfg["arrival_rates"][day_type]
 
-        rows: list[dict[str, int]] = []
+        rows: list[dict] = []
         for tick in range(self._ticks_per_day):
             band = self._tick_to_band[tick]
             band_rates = day_rates[band]
@@ -81,8 +81,14 @@ class ScenarioGenerator:
             lam_ped_l = self._draw_lambda(rng, band_rates["ped_l"], ped_mult, std)
             lam_ped_o = self._draw_lambda(rng, band_rates["ped_o"], ped_mult, std)
 
+            ticks_in_hour = tick % _TICKS_PER_HOUR
             rows.append({
                 "tick": tick,
+                "hora": tick // _TICKS_PER_HOUR,
+                "minuto": ticks_in_hour // 12,  # cada minuto = 12 ticks (12×5s = 60s)
+                "day_type": day_type,
+                "time_band": band,
+                "family": family,
                 "veh_ns": int(rng.poisson(lam_veh)),
                 "ped_l": int(rng.poisson(lam_ped_l)),
                 "ped_o": int(rng.poisson(lam_ped_o)),
@@ -92,8 +98,10 @@ class ScenarioGenerator:
         csv_path = output_dir / f"{scenario_id}.csv"
         json_path = output_dir / f"{scenario_id}.json"
 
+        resolved_rates = self._compute_resolved_rates(day_type, veh_mult, ped_mult)
+
         self._write_csv(csv_path, rows)
-        self._write_metadata(json_path, scenario_id, family, day_type, seed)
+        self._write_metadata(json_path, scenario_id, family, day_type, seed, resolved_rates)
 
         logger.info("Gerado: %s", scenario_id)
         return csv_path, json_path
@@ -125,9 +133,24 @@ class ScenarioGenerator:
         noise = float(rng.normal(0.0, std)) if std > 0.0 else 0.0
         return base * mult * max(0.0, 1.0 + noise)
 
-    def _write_csv(self, path: Path, rows: list[dict[str, int]]) -> None:
+    def _compute_resolved_rates(
+        self, day_type: str, veh_mult: float, ped_mult: float
+    ) -> dict[str, dict[str, float]]:
+        """Taxas-base após perfil-base × multiplicador de família (sem variabilidade)."""
+        result: dict[str, dict[str, float]] = {}
+        for band, band_rates in self._cfg["arrival_rates"][day_type].items():
+            result[band] = {
+                "veh_ns": round(band_rates["veh_ns"] * veh_mult, 4),
+                "ped_l":  round(band_rates["ped_l"]  * ped_mult, 4),
+                "ped_o":  round(band_rates["ped_o"]  * ped_mult, 4),
+            }
+        return result
+
+    def _write_csv(self, path: Path, rows: list[dict]) -> None:
+        fieldnames = ["tick", "hora", "minuto", "day_type", "time_band", "family",
+                      "veh_ns", "ped_l", "ped_o"]
         with path.open("w", newline="", encoding="utf-8") as fh:
-            writer = csv.DictWriter(fh, fieldnames=["tick", "veh_ns", "ped_l", "ped_o"])
+            writer = csv.DictWriter(fh, fieldnames=fieldnames)
             writer.writeheader()
             writer.writerows(rows)
 
@@ -138,6 +161,7 @@ class ScenarioGenerator:
         family: str,
         day_type: str,
         seed: int,
+        resolved_rates: dict[str, dict[str, float]],
     ) -> None:
         meta = {
             "scenario_id": scenario_id,
@@ -147,5 +171,6 @@ class ScenarioGenerator:
             "ticks_per_day": self._ticks_per_day,
             "generator_version": self._generator_version,
             "generated_at": datetime.now(timezone.utc).isoformat(),
+            "resolved_rates": resolved_rates,
         }
         path.write_text(json.dumps(meta, indent=2, ensure_ascii=False), encoding="utf-8")
