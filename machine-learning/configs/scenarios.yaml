@@ -24,33 +24,33 @@ arrival_rates:
       ped_l:  0.03   # ~22/h
       ped_o:  0.03   # ~22/h
     manha_tranquila:
-      veh_ns: 0.56   # ~403/h
-      ped_l:  0.35   # ~252/h
-      ped_o:  0.35   # ~252/h
+      veh_ns: 0.45   # ~324/h
+      ped_l:  0.30   # ~216/h
+      ped_o:  0.30   # ~216/h
     pico_manha:
-      veh_ns: 1.67   # ~1202/h  ← pico AM de SP
-      ped_l:  1.11   # ~799/h
-      ped_o:  1.11   # ~799/h
+      veh_ns: 1.25   # ~900/h  ← pico AM calibrado
+      ped_l:  0.85   # ~612/h
+      ped_o:  0.85   # ~612/h
     meio_manha:
-      veh_ns: 0.97   # ~699/h
-      ped_l:  0.83   # ~598/h
-      ped_o:  0.83   # ~598/h
+      veh_ns: 0.80   # ~576/h
+      ped_l:  0.65   # ~468/h
+      ped_o:  0.65   # ~468/h
     pico_tarde:
-      veh_ns: 1.25   # ~900/h
-      ped_l:  1.25   # ~900/h
-      ped_o:  1.25   # ~900/h
+      veh_ns: 1.00   # ~720/h
+      ped_l:  0.95   # ~684/h
+      ped_o:  0.95   # ~684/h
     tarde:
-      veh_ns: 1.11   # ~799/h
-      ped_l:  0.69   # ~497/h
-      ped_o:  0.69   # ~497/h
+      veh_ns: 0.90   # ~648/h
+      ped_l:  0.55   # ~396/h
+      ped_o:  0.55   # ~396/h
     pico_noite:
-      veh_ns: 1.81   # ~1303/h  ← pico PM de SP
-      ped_l:  1.18   # ~850/h
-      ped_o:  1.18   # ~850/h
+      veh_ns: 1.35   # ~972/h  ← pico PM calibrado
+      ped_l:  0.90   # ~648/h
+      ped_o:  0.90   # ~648/h
     noite:
-      veh_ns: 0.49   # ~353/h
-      ped_l:  0.28   # ~202/h
-      ped_o:  0.28   # ~202/h
+      veh_ns: 0.45   # ~324/h
+      ped_l:  0.25   # ~180/h
+      ped_o:  0.25   # ~180/h
 
   fds:
     # Curva achatada: sem picos de trabalho, tarde/noite mais fortes.
@@ -59,29 +59,29 @@ arrival_rates:
       ped_l:  0.05   # ~36/h
       ped_o:  0.05   # ~36/h
     manha_tranquila:
-      veh_ns: 0.30   # ~216/h
-      ped_l:  0.20   # ~144/h
-      ped_o:  0.20   # ~144/h
+      veh_ns: 0.25   # ~180/h
+      ped_l:  0.18   # ~130/h
+      ped_o:  0.18   # ~130/h
     pico_manha:
-      veh_ns: 0.70   # ~504/h
-      ped_l:  0.50   # ~360/h
-      ped_o:  0.50   # ~360/h
+      veh_ns: 0.55   # ~396/h
+      ped_l:  0.40   # ~288/h
+      ped_o:  0.40   # ~288/h
     meio_manha:
-      veh_ns: 0.90   # ~648/h
+      veh_ns: 0.70   # ~504/h
+      ped_l:  0.55   # ~396/h
+      ped_o:  0.55   # ~396/h
+    pico_tarde:
+      veh_ns: 0.85   # ~612/h
       ped_l:  0.70   # ~504/h
       ped_o:  0.70   # ~504/h
-    pico_tarde:
-      veh_ns: 1.10   # ~792/h
-      ped_l:  0.90   # ~648/h
-      ped_o:  0.90   # ~648/h
     tarde:
-      veh_ns: 1.20   # ~864/h  ← pico de consumo/lazer FDS
-      ped_l:  0.85   # ~612/h
-      ped_o:  0.85   # ~612/h
+      veh_ns: 0.95   # ~684/h  ← pico de consumo/lazer FDS
+      ped_l:  0.68   # ~490/h
+      ped_o:  0.68   # ~490/h
     pico_noite:
-      veh_ns: 1.30   # ~936/h
-      ped_l:  0.80   # ~576/h
-      ped_o:  0.80   # ~576/h
+      veh_ns: 1.05   # ~756/h
+      ped_l:  0.65   # ~468/h
+      ped_o:  0.65   # ~468/h
     noite:
       veh_ns: 0.80   # ~576/h  ← FDS tem mais movimento noturno
       ped_l:  0.40   # ~288/h
