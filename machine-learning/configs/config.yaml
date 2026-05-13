@@ -19,7 +19,7 @@ training:
 
 evaluation:
   episode_ticks: 17280     # 1 dia inteiro por episódio de avaliação
-  num_scenarios: 30        # cenários distintos usados na avaliação final
+  num_scenarios: 32        # cenários da avaliação final (4 famílias × 2 day_types × 4 seeds)
 
 thresholds:
   wait_ceiling_cars_seconds: 90       # teto de espera para carros (penalidade extra acima disso)
@@ -35,3 +35,34 @@ visualization:
   window_height: 720
   plot_update_interval_ticks: 5   # re-renderiza gráficos a cada N ticks
   history_length_ticks: 360       # ticks mantidos no histórico dos gráficos (30 min)
+
+# ── Geração de cenários ──────────────────────────────────────────────────────
+scenario_generation:
+  training:
+    families: [equilibrado, pico_veic, pico_ped, baixa_mov, imprevisivel]
+    day_types: [util, fds]
+    seeds: [100, 101, 102, 103, 104]   # 5 famílias × 2 day_types × 5 seeds = 50 cenários
+    output_dir: scenarios/train
+
+  evaluation:
+    families: [equilibrado, pico_veic, pico_ped, baixa_mov]
+    day_types: [util, fds]
+    seeds: [1000, 1001, 1002, 1003]    # 4 famílias × 2 day_types × 4 seeds = 32 cenários
+    output_dir: scenarios/eval
+    # imprevisivel excluída: stress test reservado ao treino (ver scenarios.yaml)
+
+# ── Métricas de avaliação ────────────────────────────────────────────────────
+metrics:
+  - espera_media_carros
+  - espera_media_pedestres
+  - espera_maxima_carros
+  - espera_maxima_pedestres
+  - espera_p95_carros
+  - espera_p95_pedestres
+  - violacoes_teto_carros
+  - violacoes_teto_pedestres
+  - fila_media_veh_ns
+  - fila_media_ped_l
+  - fila_media_ped_o
+  - throughput_total_carros
+  - throughput_total_pedestres
