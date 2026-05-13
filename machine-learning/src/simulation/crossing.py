@@ -112,6 +112,7 @@ class Crossing:
         self.ticks_in_phase: int = 0
         self.current_tick: int = 0
         self._pending_switch: bool = False
+        self._served_this_tick: dict[str, list[int]] = {"veh_ns": [], "ped_l": [], "ped_o": []}
 
     # ------------------------------------------------------------------
     # Restrições de fase
@@ -150,6 +151,8 @@ class Crossing:
 
         Retorna: estado pós-tick (ver get_state())
         """
+        self._served_this_tick = {"veh_ns": [], "ped_l": [], "ped_o": []}
+
         # 1. Troca pendente do tick anterior entra em vigor agora
         if self._pending_switch:
             self._execute_phase_switch()
@@ -198,11 +201,11 @@ class Crossing:
                 self._cfg["saturation_flow_veh_per_lane_per_tick"]
                 * self._cfg["num_car_lanes"]
             )
-            self.veh_ns.drain(flow)
+            self._served_this_tick["veh_ns"] = self.veh_ns.drain(flow)
         else:
             flow_per_side = self._cfg["saturation_flow_ped_per_side_per_tick"]
-            self.ped_l.drain(flow_per_side)
-            self.ped_o.drain(flow_per_side)
+            self._served_this_tick["ped_l"] = self.ped_l.drain(flow_per_side)
+            self._served_this_tick["ped_o"] = self.ped_o.drain(flow_per_side)
 
     def _execute_phase_switch(self) -> None:
         """Inverte a fase e zera o contador de ticks na fase."""
@@ -230,6 +233,7 @@ class Crossing:
         self.ticks_in_phase = 0
         self.current_tick = 0
         self._pending_switch = False
+        self._served_this_tick = {"veh_ns": [], "ped_l": [], "ped_o": []}
         return self.get_state()
 
     def get_state(self) -> dict[str, Any]:
@@ -244,6 +248,11 @@ class Crossing:
             "phase": self.current_phase.value,
             "ticks_in_phase": self.ticks_in_phase,
             "pending_switch": self._pending_switch,
+            "served_this_tick": {
+                "veh_ns": list(self._served_this_tick["veh_ns"]),
+                "ped_l": list(self._served_this_tick["ped_l"]),
+                "ped_o": list(self._served_this_tick["ped_o"]),
+            },
             "veh_ns": {
                 "size": self.veh_ns.size,
                 "max_wait_ticks": self.veh_ns.max_wait_ticks,
