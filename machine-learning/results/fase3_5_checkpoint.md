@@ -153,7 +153,7 @@ O benchmark executa o `FixedTimeController` (Fase A = 9 ticks / 45 s; Fase B = 5
 
 ## 5. Cobertura de testes
 
-Execução de `pytest tests/ -v` em 2026-05-14:
+Execução de `pytest tests/ -v` em 2026-05-14 (pós-correção do bug de interval):
 
 | Módulo | Testes | Resultado |
 |---|---|---|
@@ -162,14 +162,15 @@ Execução de `pytest tests/ -v` em 2026-05-14:
 | `test_crossing.py` | 18 | 18 PASS |
 | `test_metrics.py` | 35 | 35 PASS |
 | `test_scenario_generator.py` | 34 | 34 PASS |
-| `test_visualization.py` | 18 | 17 PASS, **1 FAIL** |
-| **Total** | **115** | **114 PASS / 1 FAIL** |
+| `test_visualization.py` | 19 | 19 PASS |
+| **Total** | **116** | **116 PASS / 0 FAIL** |
 
-**Falha:** `test_visualization.py::TestLivePlots::test_update_interval_respected` — teste sensível a timing que verifica o intervalo de atualização dos gráficos ao vivo. É uma falha intermitente de ambiente (não de lógica de negócio) e não bloqueia a Fase 4. O módulo `src/visualization/` não integra com o ambiente Gymnasium.
+Durante a Fase 3.5 foi identificado e corrigido um bug real em `src/visualization/live_plots.py`: `_last_drawn` era inicializado como `-999`, fazendo `update_surface(interval)` sempre renderizar na primeira chamada independente do interval — inclusive quando os dados acumulados eram insuficientes. A correção muda o valor inicial para `None` e trata o caso `_last_drawn is None` explicitamente como "primeira renderização, sempre executa". Um segundo teste (`test_first_render_is_immediate`) foi adicionado para cobrir o comportamento desejável de não mostrar tela vazia ao usuário.
 
 **Cobertura por área:**
 - Engine de simulação (`crossing`, `controllers`, `metrics`): 58 testes cobrindo filas, fases, drenagem fracionada, mínimos de verde, todas as 13 métricas e cálculo de recompensa.
 - Gerador de cenários: 34 testes cobrindo reprodutibilidade (SHA-256), estrutura CSV/JSON, 10 transições de faixa horária, efeito dos multiplicadores de família e isolamento de seeds.
+- Visualização: 19 testes cobrindo renderer Pygame, loop de simulação e gráficos ao vivo (incluindo comportamento de interval e primeira renderização imediata).
 - Infraestrutura: 5 testes de carregamento de YAML.
 
 ---
