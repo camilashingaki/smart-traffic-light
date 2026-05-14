@@ -218,13 +218,36 @@ class TestLivePlots:
         assert len(plots._ticks) == 0
         plots.close()
 
-    def test_update_interval_respected(self, cfg, pygame_init):
+    def test_first_render_is_immediate(self, cfg, pygame_init):
+        """Primeira chamada a update_surface sempre renderiza, independente do interval."""
         plots = self._make_plots(cfg)
         c = Crossing(cfg["simulation"])
         state = c.reset()
         for _ in range(3):
             state = c.step({"veh_ns": 1, "ped_l": 0, "ped_o": 0}, 0)
             plots.record(state)
-        plots.update_surface(10)  # interval > ticks registrados
-        assert plots.get_surface() is None  # não deve ter renderizado ainda
+        plots.update_surface(100)  # interval grande — deve renderizar mesmo assim
+        assert plots.get_surface() is not None
+        plots.close()
+
+    def test_update_interval_respected(self, cfg, pygame_init):
+        """Após a primeira renderização, chamadas dentro do interval não re-renderizam."""
+        plots = self._make_plots(cfg)
+        c = Crossing(cfg["simulation"])
+        state = c.reset()
+
+        # Primeira renderização — grava tick 1, 2, 3; renderiza imediatamente
+        for _ in range(3):
+            state = c.step({"veh_ns": 1, "ped_l": 0, "ped_o": 0}, 0)
+            plots.record(state)
+        plots.update_surface(10)
+        surface_after_first = plots.get_surface()
+        assert surface_after_first is not None  # primeira renderização ocorreu
+
+        # Registra mais 2 ticks (total: ticks 4 e 5) — ainda dentro do interval de 10
+        for _ in range(2):
+            state = c.step({"veh_ns": 1, "ped_l": 0, "ped_o": 0}, 0)
+            plots.record(state)
+        plots.update_surface(10)
+        assert plots.get_surface() is surface_after_first  # mesma surface — não re-renderizou
         plots.close()

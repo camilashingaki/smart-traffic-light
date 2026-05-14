@@ -59,7 +59,7 @@ class LivePlots:
         self._max_ped_s: deque[float] = deque(maxlen=history_length)
         self._phases:    deque[int]   = deque(maxlen=history_length)  # 0=A, 1=B
 
-        self._last_drawn = -999
+        self._last_drawn: int | None = None
         self._dirty = False
 
     # ── Registro ─────────────────────────────────────────────────────────────
@@ -84,23 +84,27 @@ class LivePlots:
                   self._max_car_s, self._max_ped_s, self._phases):
             q.clear()
         self._surface = None
-        self._last_drawn = -999
+        self._last_drawn: int | None = None
         self._dirty = False
 
     # ── Atualização da Surface ───────────────────────────────────────────────
 
     def update_surface(self, interval: int) -> None:
         """
-        Re-renderiza os gráficos se houver pelo menos `interval` novos ticks
-        desde a última renderização.
+        Re-renderiza os gráficos se necessário.
+
+        Sempre renderiza na primeira chamada após dados serem registrados
+        (evita tela vazia no início). Nas chamadas seguintes, só renderiza
+        quando pelo menos `interval` ticks tiverem passado desde o último draw.
 
         Parâmetros:
-        - interval: número mínimo de ticks entre re-renderizações
+        - interval: número mínimo de ticks entre re-renderizações consecutivas
         """
         if not self._dirty or not self._ticks:
             return
-        if self._ticks[-1] - self._last_drawn < interval:
-            return
+        if self._last_drawn is not None:
+            if self._ticks[-1] - self._last_drawn < interval:
+                return
         self._last_drawn = self._ticks[-1]
         self._dirty = False
         self._redraw()
