@@ -1,0 +1,68 @@
+# Parâmetros gerais do sistema.
+# NUNCA hard-code estes valores no código — sempre leia daqui.
+
+simulation:
+  tick_seconds: 5                          # 1 tick = 5 segundos reais simulados
+  min_green_cars_ticks: 3                  # mínimo de ticks em Fase A (15s)
+  min_green_pedestrians_ticks: 2           # mínimo de ticks em Fase B (10s)
+  yellow_visual_seconds: 3                 # duração do amarelo (apenas visual, sem efeito funcional)
+  num_car_lanes: 2                         # faixas paralelas N→S
+  saturation_flow_veh_per_lane_per_tick: 1.5 # carros que passam por faixa por tick quando verde (fracionário — usa crédito acumulado)
+  saturation_flow_ped_per_side_per_tick: 4   # pedestres por lado por tick quando verde
+
+fixed_time_controller:
+  phase_a_ticks: 9    # duração oficial do benchmark — Fase A (45s)
+  phase_b_ticks: 5    # duração oficial do benchmark — Fase B (25s)
+
+training:
+  episode_ticks: 360       # 30 minutos por episódio de treino
+
+evaluation:
+  episode_ticks: 17280     # 1 dia inteiro por episódio de avaliação
+  num_scenarios: 32        # cenários da avaliação final (4 famílias × 2 day_types × 4 seeds)
+
+thresholds:
+  wait_ceiling_cars_seconds: 90       # teto de espera para carros (penalidade extra acima disso)
+  wait_ceiling_pedestrians_seconds: 60 # teto de espera para pedestres
+
+demo_arrival_rate:
+  vehicles: 1.0           # chegadas médias de veículos por tick (placeholder até Fase 3)
+  pedestrians_east: 0.3   # chegadas médias de pedestres lado leste por tick
+  pedestrians_west: 0.3   # chegadas médias de pedestres lado oeste por tick
+
+visualization:
+  window_width: 1280
+  window_height: 720
+  plot_update_interval_ticks: 5   # re-renderiza gráficos a cada N ticks
+  history_length_ticks: 360       # ticks mantidos no histórico dos gráficos (30 min)
+
+# ── Geração de cenários ──────────────────────────────────────────────────────
+scenario_generation:
+  training:
+    families: [equilibrado, pico_veic, pico_ped, baixa_mov, imprevisivel]
+    day_types: [util, fds]
+    seeds: [100, 101, 102, 103, 104]   # 5 famílias × 2 day_types × 5 seeds = 50 cenários
+    output_dir: scenarios/train
+
+  evaluation:
+    families: [equilibrado, pico_veic, pico_ped, baixa_mov]
+    day_types: [util, fds]
+    seeds: [1000, 1001, 1002, 1003]    # 4 famílias × 2 day_types × 4 seeds = 32 cenários
+    output_dir: scenarios/eval
+    # imprevisivel excluída: stress test reservado ao treino (ver scenarios.yaml)
+
+# ── Métricas de avaliação ────────────────────────────────────────────────────
+metrics:
+  - espera_media_carros
+  - espera_media_pedestres
+  - espera_maxima_carros
+  - espera_maxima_pedestres
+  - espera_p95_carros
+  - espera_p95_pedestres
+  - violacoes_teto_carros
+  - violacoes_teto_pedestres
+  - fila_media_veh_ns
+  - fila_media_ped_l
+  - fila_media_ped_o
+  - throughput_total_carros
+  - throughput_total_pedestres

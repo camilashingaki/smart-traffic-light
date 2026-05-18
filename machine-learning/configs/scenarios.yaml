@@ -1,0 +1,134 @@
+# Calibração do gerador de cenários.
+# Todas as taxas são em chegadas/tick (1 tick = 5s).
+# Equivalente em chegadas/hora: taxa × 720.
+# Referências: volumes viários típicos de cruzamentos urbanos de SP (2023).
+# Altere apenas este arquivo para recalibrar sem mexer no código.
+
+# ── Faixas horárias ──────────────────────────────────────────────────────────
+# Intervalos em horas inteiras [start, end) — end é exclusivo.
+time_band_boundaries:
+  madrugada:       {start: 0,  end: 5}   # [0h, 5h)
+  manha_tranquila: {start: 5,  end: 7}   # [5h, 7h)
+  pico_manha:      {start: 7,  end: 10}  # [7h, 10h)
+  meio_manha:      {start: 10, end: 12}  # [10h, 12h)
+  pico_tarde:      {start: 12, end: 14}  # [12h, 14h)
+  tarde:           {start: 14, end: 17}  # [14h, 17h)
+  pico_noite:      {start: 17, end: 20}  # [17h, 20h)
+  noite:           {start: 20, end: 24}  # [20h, 24h)
+
+# ── Taxas base por (tipo de dia × faixa horária × fila) ─────────────────────
+arrival_rates:
+  util:
+    madrugada:
+      veh_ns: 0.11   # ~79/h
+      ped_l:  0.03   # ~22/h
+      ped_o:  0.03   # ~22/h
+    manha_tranquila:
+      veh_ns: 0.45   # ~324/h
+      ped_l:  0.30   # ~216/h
+      ped_o:  0.30   # ~216/h
+    pico_manha:
+      veh_ns: 1.25   # ~900/h  ← pico AM calibrado
+      ped_l:  0.85   # ~612/h
+      ped_o:  0.85   # ~612/h
+    meio_manha:
+      veh_ns: 0.80   # ~576/h
+      ped_l:  0.65   # ~468/h
+      ped_o:  0.65   # ~468/h
+    pico_tarde:
+      veh_ns: 1.00   # ~720/h
+      ped_l:  0.95   # ~684/h
+      ped_o:  0.95   # ~684/h
+    tarde:
+      veh_ns: 0.90   # ~648/h
+      ped_l:  0.55   # ~396/h
+      ped_o:  0.55   # ~396/h
+    pico_noite:
+      veh_ns: 1.35   # ~972/h  ← pico PM calibrado
+      ped_l:  0.90   # ~648/h
+      ped_o:  0.90   # ~648/h
+    noite:
+      veh_ns: 0.45   # ~324/h
+      ped_l:  0.25   # ~180/h
+      ped_o:  0.25   # ~180/h
+
+  fds:
+    # Curva achatada: sem picos de trabalho, tarde/noite mais fortes.
+    madrugada:
+      veh_ns: 0.15   # ~108/h
+      ped_l:  0.05   # ~36/h
+      ped_o:  0.05   # ~36/h
+    manha_tranquila:
+      veh_ns: 0.25   # ~180/h
+      ped_l:  0.18   # ~130/h
+      ped_o:  0.18   # ~130/h
+    pico_manha:
+      veh_ns: 0.55   # ~396/h
+      ped_l:  0.40   # ~288/h
+      ped_o:  0.40   # ~288/h
+    meio_manha:
+      veh_ns: 0.70   # ~504/h
+      ped_l:  0.55   # ~396/h
+      ped_o:  0.55   # ~396/h
+    pico_tarde:
+      veh_ns: 0.85   # ~612/h
+      ped_l:  0.70   # ~504/h
+      ped_o:  0.70   # ~504/h
+    tarde:
+      veh_ns: 0.95   # ~684/h  ← pico de consumo/lazer FDS
+      ped_l:  0.68   # ~490/h
+      ped_o:  0.68   # ~490/h
+    pico_noite:
+      veh_ns: 1.05   # ~756/h
+      ped_l:  0.65   # ~468/h
+      ped_o:  0.65   # ~468/h
+    noite:
+      veh_ns: 0.80   # ~576/h  ← FDS tem mais movimento noturno
+      ped_l:  0.40   # ~288/h
+      ped_o:  0.40   # ~288/h
+
+# ── Multiplicadores por família ──────────────────────────────────────────────
+# veh_multiplier: escala as taxas base de veículos
+# ped_multiplier: escala as taxas base de pedestres
+# var_multiplier: amplifica o desvio padrão do ruído na fórmula de lambda
+#
+# Fórmula: lambda = base × mult × max(0, 1 + N(0, variability_base_std × var_mult))
+#
+# NOTA SOBRE imprevisivel:
+#   A família imprevisivel aparece no conjunto de treino mas é excluída da avaliação.
+#   Isso é intencional: queremos que o agente seja exposto a condições mais ruidosas
+#   no treino do que aquelas em que será avaliado, para favorecer generalização.
+families:
+  equilibrado:
+    veh_multiplier: 1.0
+    ped_multiplier: 1.0
+    var_multiplier: 1.0
+
+  pico_veic:
+    veh_multiplier: 1.5
+    ped_multiplier: 0.7
+    var_multiplier: 1.0
+
+  pico_ped:
+    veh_multiplier: 0.7
+    ped_multiplier: 1.6
+    var_multiplier: 1.0
+
+  baixa_mov:
+    veh_multiplier: 0.4
+    ped_multiplier: 0.4
+    var_multiplier: 1.0
+
+  imprevisivel:
+    # Excluída da avaliação — ver NOTA acima.
+    veh_multiplier: 1.0
+    ped_multiplier: 1.0
+    var_multiplier: 2.5
+
+# ── Parâmetros de geração ────────────────────────────────────────────────────
+generation:
+  ticks_per_day: 17280          # 24h × 720 ticks/hora
+  generator_version: "3.0"
+  variability_base_std: 0.1     # desvio padrão base do ruído de variabilidade
+                                # (multiplicado por var_multiplier de cada família)
+                                # calibrar aqui sem tocar no código
