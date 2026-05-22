@@ -5,8 +5,8 @@ int carroVermelho = 12;
 int pedestre1Verde = 26;
 int pedestre1Vermelho = 25;
 
-int pedestre2Verde = 35;
-int pedestre2Vermelho = 34;
+int pedestre2Verde = 18;
+int pedestre2Vermelho = 19;
 
 int tempoFase1 = 5000; // Carros passam
 int tempoFase2 = 2000; // Alerta
@@ -28,8 +28,8 @@ void fase1() {
   digitalWrite(carroVermelho, LOW);
   digitalWrite(pedestre1Verde, LOW);
   digitalWrite(pedestre1Vermelho, HIGH);
-  digitalWrite(pedestre2Verde, HIGH);
-  digitalWrite(pedestre2Vermelho, LOW);
+  digitalWrite(pedestre2Verde, LOW);
+  digitalWrite(pedestre2Vermelho, HIGH);
   delay(tempoFase1);
 }
 
@@ -39,8 +39,8 @@ void fase2() {
   digitalWrite(carroVermelho, LOW);
   digitalWrite(pedestre1Verde, LOW);
   digitalWrite(pedestre1Vermelho, HIGH);
-  digitalWrite(pedestre2Verde, HIGH);
-  digitalWrite(pedestre2Vermelho, LOW);
+  digitalWrite(pedestre2Verde, LOW);
+  digitalWrite(pedestre2Vermelho, HIGH);
   delay(tempoFase2);
 }
 
@@ -50,8 +50,8 @@ void fase3() {
   digitalWrite(carroVermelho, HIGH);
   digitalWrite(pedestre1Verde, HIGH);
   digitalWrite(pedestre1Vermelho, LOW);
-  digitalWrite(pedestre2Verde, LOW);
-  digitalWrite(pedestre2Vermelho, HIGH);
+  digitalWrite(pedestre2Verde, HIGH);
+  digitalWrite(pedestre2Vermelho, LOW);
   delay(tempoFase3);
 }
 
