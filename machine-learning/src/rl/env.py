@@ -175,12 +175,13 @@ class TrafficLightEnv(gym.Env):
         super().reset(seed=seed)
 
         # Sorteia cenário aleatório
-        path = random.choice(self._scenario_paths)
+        idx  = self.np_random.integers(0, len(self._scenario_paths))
+        path = self._scenario_paths[idx]
         self._scenario_df = pd.read_csv(path)
 
         # Sorteia ponto de início no dia (o episódio precisa caber no CSV)
         max_inicio = max(0, len(self._scenario_df) - self._ep_ticks)
-        self._tick_inicio = random.randint(0, max_inicio)
+        self._tick_inicio = int(self.np_random.integers(0, max_inicio + 1))
         self._tick_atual  = self._tick_inicio
         self._ticks_ep    = 0
 
