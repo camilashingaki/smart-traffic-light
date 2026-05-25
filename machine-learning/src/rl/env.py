@@ -13,11 +13,11 @@ Conceitos-chave (ver INSTRUCOES_SEMAFORO_INTELIGENTE.md §3):
 - Ação 0     : manter a fase atual
 - Ação 1     : solicitar troca de fase (ignorada se tempo mínimo não atingido)
 
-Importante — API real do Crossing (crossing.py):
+API real do Crossing (crossing.py):
 - crossing.step(arrivals, action) executa TODO o tick de uma vez.
   arrivals = {'veh_ns': int, 'ped_l': int, 'ped_o': int}
   action   = 0 ou 1
-- As filas são objetos TrafficQueue; o tamanho é crossing.veh_ns.size
+- As filas são objetos TrafficQueue; tamanho = .size, espera = .max_wait_ticks
 - Os tempos de espera estão em TICKS — multiplicar por 5 para converter em segundos
 """
 
@@ -75,7 +75,6 @@ class TrafficLightEnv(gym.Env):
 
     # Denominadores de normalização de cada componente.
     # Valores máximos razoáveis para o cruzamento modelado.
-    # Ajuste aqui se as filas ficarem consistentemente acima de 1.0.
     _NORM = {
         "veh_ns":          30.0,  # carros na fila N→S
         "ped_l":           15.0,  # pedestres lado leste
@@ -95,20 +94,20 @@ class TrafficLightEnv(gym.Env):
         super().__init__()
 
         # ── Carrega configurações ──────────────────────────────────────────
-        self._cfg    = load_config(config_path)["simulation"]
-        self._rl_cfg = load_config(rl_config_path)
-
+        _full_cfg        = load_config(config_path)
+        self._cfg        = _full_cfg["simulation"]   # passa só 'simulation' para o Crossing
+        self._rl_cfg     = load_config(rl_config_path)
         self.render_mode = render_mode
 
         # Pesos da recompensa vindos do rl.yaml
         self._w = self._rl_cfg["reward_weights"]
 
-        # Tetos de espera em segundos (para comparação após converter ticks)
+        # Tetos de espera em segundos
         self._teto_car_s: int = self._rl_cfg["teto_espera_carros"]    # 90
         self._teto_ped_s: int = self._rl_cfg["teto_espera_pedestres"] # 60
 
-        # Duração do episódio de treino em ticks (360 = 30 min)
-        self._ep_ticks: int = self._cfg["episode_train_ticks"]
+        # Duração do episódio de treino em ticks — chave correta do config.yaml
+        self._ep_ticks: int = _full_cfg["training"]["episode_ticks"]  # 360
 
         # ── Espaço de ação: 0 = manter, 1 = trocar ────────────────────────
         self.action_space = spaces.Discrete(2)
@@ -125,8 +124,8 @@ class TrafficLightEnv(gym.Env):
         self.crossing = Crossing(cfg=self._cfg)
 
         # ── Cenários de treino disponíveis ────────────────────────────────
-        self._scenarios_dir   = Path(scenarios_dir)
-        self._scenario_paths  = sorted(self._scenarios_dir.glob("*.csv"))
+        self._scenarios_dir  = Path(scenarios_dir)
+        self._scenario_paths = sorted(self._scenarios_dir.glob("*.csv"))
         if not self._scenario_paths:
             raise FileNotFoundError(
                 f"Nenhum cenário CSV encontrado em '{scenarios_dir}'. "
@@ -311,8 +310,8 @@ class TrafficLightEnv(gym.Env):
         -------
         obs : np.ndarray, shape (7,), dtype float32
         """
-        c   = self.crossing
-        n   = self._NORM
+        c = self.crossing
+        n = self._NORM
 
         # Tempos de espera máximos convertidos de ticks para segundos
         max_wait_car_s = c.veh_ns.max_wait_ticks * TICK_S
@@ -374,8 +373,8 @@ class TrafficLightEnv(gym.Env):
         ) * TICK_S
 
         # Desequilíbrio entre carga de veículos e pedestres
-        carga_veic = c.veh_ns.size
-        carga_ped  = c.ped_l.size + c.ped_o.size
+        carga_veic    = c.veh_ns.size
+        carga_ped     = c.ped_l.size + c.ped_o.size
         desequilibrio = abs(carga_veic - carga_ped)
 
         # Agentes acima do teto de espera (penalidade severa)
@@ -413,15 +412,15 @@ class TrafficLightEnv(gym.Env):
         c = self.crossing
         return {
             # Posição no episódio
-            "ticks_episodio":   self._ticks_ep,
-            "tick_absoluto":    self._tick_atual,
+            "ticks_episodio":     self._ticks_ep,
+            "tick_absoluto":      self._tick_atual,
             # Filas
-            "fila_carros":      c.veh_ns.size,
-            "fila_ped_leste":   c.ped_l.size,
-            "fila_ped_oeste":   c.ped_o.size,
+            "fila_carros":        c.veh_ns.size,
+            "fila_ped_leste":     c.ped_l.size,
+            "fila_ped_oeste":     c.ped_o.size,
             # Semáforo
-            "fase_atual":       c.current_phase.value,
-            "ticks_na_fase":    c.ticks_in_phase,
+            "fase_atual":         c.current_phase.value,
+            "ticks_na_fase":      c.ticks_in_phase,
             # Esperas em segundos
             "max_espera_carro_s": c.veh_ns.max_wait_ticks * TICK_S,
             "max_espera_ped_s":   max(
