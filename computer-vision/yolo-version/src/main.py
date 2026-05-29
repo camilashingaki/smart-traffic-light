@@ -1,15 +1,13 @@
 from ultralytics import YOLO
 import cv2
+import time
+from area_crop_vehicle import crop_traffic_area
 
 # Modelo leve e rápido
-model = YOLO("yolov8s.pt")
+model = YOLO("yolov8n.pt")
 
 # Webcam
 cap = cv2.VideoCapture(2)
-
-# ! essa qualidade aqui ta pessima, muito pesada, mas qualidades mais baixas prejudicam a identificação
-cap.set(cv2.CAP_PROP_FRAME_WIDTH, 1280) 
-cap.set(cv2.CAP_PROP_FRAME_HEIGHT, 720)
 
 # Classes de veículos
 VEHICLE_CLASSES = [2, 3, 5, 7]
@@ -22,7 +20,8 @@ while True:
         break
 
     # Inferência balanceada
-    results = model(frame, imgsz=640)
+    cropped_frame = crop_traffic_area(frame)
+    results = model(cropped_frame, imgsz=640)
 
     vehicle_count = 0
 
@@ -33,7 +32,7 @@ while True:
             confidence = float(box.conf[0])
 
             # Filtra veículos
-            if cls in VEHICLE_CLASSES and confidence > 0.25: #? tive que baixar porque ele nao identifica direito, talvez seja porque não está na situação certa (rua)
+            if cls in VEHICLE_CLASSES and confidence > 0: #? tive que baixar porque ele nao identifica direito, talvez seja porque não está na situação certa (rua)
 
                 vehicle_count += 1
 
@@ -43,7 +42,7 @@ while True:
 
                 # Caixa
                 cv2.rectangle(
-                    frame,
+                    cropped_frame,
                     (x1, y1),
                     (x2, y2),
                     (0, 255, 0),
@@ -52,7 +51,7 @@ while True:
 
                 # Texto
                 cv2.putText(
-                    frame,
+                    cropped_frame,
                     label,
                     (x1, y1 - 10),
                     cv2.FONT_HERSHEY_SIMPLEX,
@@ -61,18 +60,19 @@ while True:
                     2
                 )
 
+
     # Contador
     cv2.putText(
-        frame,
+        cropped_frame,
         f"Veiculos: {vehicle_count}",
         (20, 50),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.2,
-        (0, 0, 255),
+        (255, 0, 0),
         3
     )
 
-    cv2.imshow("YOLO - Veiculos", frame)
+    cv2.imshow("YOLO - Veiculos", cropped_frame)
 
     # Sai com Q
     if cv2.waitKey(1) & 0xFF == ord("q"):
