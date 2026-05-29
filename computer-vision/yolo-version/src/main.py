@@ -4,7 +4,7 @@ import time
 from area_crop_vehicle import crop_traffic_area
 
 # Modelo leve e rápido
-model = YOLO("yolov8n.pt")
+model = YOLO("yolov8m.pt")
 
 # Webcam
 cap = cv2.VideoCapture(2)
