@@ -13,7 +13,7 @@ while True:
         continue
 
     x1, y1 = 80, 50
-    x2, y2 = 1200, 650
+    x2, y2 = 300, 600
 
     frame_crop = frame[y1:y2, x1:x2]
 
