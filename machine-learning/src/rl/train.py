@@ -121,6 +121,7 @@ def treinar(
     print("Configurando modelo PPO...")
     model = PPO(
         policy="MlpPolicy",
+        policy_kwargs={"net_arch": [128, 128, 64]},
         env=vec_env,
         learning_rate=ppo_cfg["learning_rate"],
         n_steps=ppo_cfg["n_steps"],

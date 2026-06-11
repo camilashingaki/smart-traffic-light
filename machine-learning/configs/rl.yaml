@@ -1,30 +1,31 @@
-# Hiperparâmetros do RL e pesos da função de recompensa.
-# Ajuste aqui para rebalancear o aprendizado sem tocar no código.
-
 reward_weights:
-  espera_acumulada: -1.0   # soma dos tempos de espera de todos na fila
-  tamanho_filas:    -0.5   # tamanho total das filas neste tick
-  max_espera:       -2.0   # penalidade extra para a maior espera atual
-  desequilibrio:    -0.3   # |carga_veiculos - carga_pedestres| neste tick
-  excedeu_teto:    -10.0   # penalidade por agente acima do teto de espera
+  espera_acumulada: -1.0
+  custo_troca: -50.0
+  troca_desnecessaria: -5.0
+  tamanho_filas:    -0.5
+  max_espera:       -2.0
+  desequilibrio:    -5.0
+  excedeu_teto_carros:    -1.0
+  excedeu_teto_pedestres: -0.2
+  fila_carros_progressiva: -0.3
 
-teto_espera_carros:    90  # segundos — deve coincidir com config.yaml
-teto_espera_pedestres: 60  # segundos — deve coincidir com config.yaml
+teto_espera_carros:    90
+teto_espera_pedestres: 60
 
 ppo:
-  learning_rate: 0.0003
+  learning_rate: 0.001
   n_steps: 2048
   batch_size: 64
   n_epochs: 10
   gamma: 0.99
   gae_lambda: 0.95
-  clip_range: 0.2
-  ent_coef: 0.01
+  clip_range: 0.3
+  ent_coef: 0.05
   vf_coef: 0.5
   max_grad_norm: 0.5
   total_timesteps: 1000000
-  n_envs: 4                # ambientes paralelos durante treino
+  n_envs: 4
 
 checkpoints:
-  save_freq_steps: 50000   # salvar checkpoint a cada N passos
+  save_freq_steps: 50000
   keep_last_n: 5
