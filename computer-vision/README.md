@@ -1,144 +1,321 @@
-# 👀
-# Sistema de Visão Computacional 🚦
+# 🚦 Sistema de Visão Computacional para Semáforos Inteligentes
 
-## Visão geral
+## 📖 Sobre o Projeto
 
-Este módulo do projeto tem como objetivo detectar veículos em uma maquete urbana utilizando visão computacional, fornecendo dados para um sistema de controle adaptativo de semáforos.
+Este repositório contém o módulo de visão computacional desenvolvido para um sistema de semáforos inteligentes.
 
-O sistema utiliza uma webcam USB posicionada acima da maquete para capturar imagens em tempo real. O processamento é realizado com Python e OpenCV em ambiente Linux.
+O objetivo do sistema é monitorar, em tempo real, o fluxo de veículos e pedestres em uma maquete urbana utilizando uma câmera posicionada acima da via. As informações obtidas são processadas por modelos YOLO e convertidas em dados de tráfego, que podem ser utilizados por uma lógica de controle semafórico adaptativo.
 
-A arquitetura atual do sistema é:
+Atualmente, o sistema utiliza:
+
+* Um modelo YOLO pré-treinado para detecção de veículos;
+* Um modelo YOLO treinado especificamente para detecção de pedestres na maquete;
+* Processamento em tempo real utilizando Python e OpenCV;
+* Geração de dados de tráfego em formato JSON.
+
+---
+
+## ✨ Funcionalidades
+
+* 🚗 Detecção automática de veículos
+* 🚶 Detecção automática de pedestres
+* 📊 Contagem de objetos em tempo real
+* 🎥 Captura de vídeo por webcam
+* 🤖 Treinamento de modelos YOLO personalizados
+* 📄 Exportação dos dados de tráfego
+
+---
+
+## 🏗 Arquitetura do Sistema
 
 ```text
 Webcam USB
     ↓
 Captura de vídeo
     ↓
-Processamento OpenCV
-    ↓
-Detecção de veículos
-    ↓
-Contagem de carros
-    ↓
-Lógica semafórica
+Recorte das áreas monitoradas
+    ├── Veículos
+    └── Pedestres
+            ↓
+       Modelos YOLO
+            ↓
+      Contagem dos objetos
+            ↓
+      traffic_data.json
+            ↓
+      Sistema Semafórico
 ```
 
 ---
 
-# Primeira abordagem
-
-A primeira solução desenvolvida foi baseada em Background Subtraction.
-
-A ideia consiste em capturar uma imagem da maquete vazia (`base.jpg`) e utilizá-la como referência fixa do cenário.
-
-Cada frame da câmera é comparado com essa imagem base:
+## 📂 Estrutura do Projeto
 
 ```text
-Imagem base
-    ↓
-Frame atual
-    ↓
-Diferença entre imagens
-    ↓
-Binarização
-    ↓
-Limpeza de ruído
-    ↓
-Contornos
-    ↓
-Contagem de veículos
+computer-vision/
+│
+├── README.md
+│
+└── yolo-version/
+    │
+    ├── dataset/
+    │   ├── train/
+    │   ├── valid/
+    │   ├── test/
+    │   ├── data.yaml
+    │   ├── README.dataset.txt
+    │   └── README.roboflow.txt
+    │
+    ├── models/
+    │   ├── pedestrian_model.pt
+    │   └── pedestrians_v2_452.pt
+    │
+    ├── src/
+    │   ├── main.py
+    │   ├── train.py
+    │   ├── area_crop_vehicle.py
+    │   ├── area_crop_pedestrian.py
+    │   ├── traffic_data.json
+    │   ├── yolov8m.pt
+    │   └── yolov8n.pt
+    │
+    ├── tests/
+    │   ├── area-comparison
+    │   ├── area-crop.py
+    │   ├── dataset.py
+    │   ├── pedestrians_test.py
+    │   └── teste_area.py
+    │
+    └── venv/
 ```
-
-O sistema utiliza:
-
-* `cv2.absdiff()` para comparação entre imagens;
-* threshold binário para segmentação;
-* operações morfológicas (`MORPH_OPEN` e `MORPH_CLOSE`) para estabilização da máscara;
-* contornos para identificar veículos individualmente.
-
-Essa abordagem foi escolhida inicialmente por:
-
-* baixo custo computacional;
-* simplicidade de implementação;
-* funcionamento com carros parados;
-* compatibilidade futura com Raspberry Pi.
 
 ---
 
-# Problemas encontrados
+# 📁 Descrição das Pastas
 
-Durante os testes, foram observados:
+## dataset/
 
-* flutuação na contagem por área;
-* ruídos causados por iluminação e textura;
-* instabilidade causada por pequenas diferenças entre frames.
+Contém o conjunto de dados utilizado para treinamento, validação e testes do detector de pedestres.
 
-Por isso, o sistema evoluiu de:
+### train/
+
+Imagens e anotações utilizadas durante o treinamento do modelo.
+
+### valid/
+
+Imagens utilizadas durante a validação do treinamento.
+
+### test/
+
+Imagens utilizadas para testes finais do modelo.
+
+### data.yaml
+
+Arquivo de configuração utilizado pelo YOLO contendo os caminhos do dataset e as classes utilizadas.
+
+### README.dataset.txt
+
+Arquivo gerado durante a exportação do conjunto de dados.
+
+### README.roboflow.txt
+
+Informações sobre a exportação realizada pelo Roboflow.
+
+---
+
+## models/
+
+Contém os modelos treinados para utilização no projeto.
+
+### pedestrian_model.pt
+
+Modelo principal utilizado para detecção de pedestres.
+
+### pedestrians_v2_452.pt
+
+Versão alternativa gerada durante o processo de treinamento.
+
+---
+
+## src/
+
+Contém os arquivos principais da aplicação.
+
+### main.py
+
+Arquivo responsável pela execução do sistema.
+
+Funções principais:
+
+* captura de vídeo;
+* carregamento dos modelos;
+* detecção de veículos;
+* detecção de pedestres;
+* contagem dos objetos;
+* geração dos dados de tráfego.
+
+### area_crop_vehicle.py
+
+Define a região da imagem utilizada para monitoramento dos veículos.
+
+### area_crop_pedestrian.py
+
+Define a região da imagem utilizada para monitoramento dos pedestres.
+
+### train.py
+
+Script utilizado para treinamento do modelo YOLO de pedestres.
+
+### traffic_data.json
+
+Arquivo onde são armazenadas as informações geradas pelo sistema.
+
+### yolov8m.pt e yolov8n.pt
+
+Modelos YOLO pré-treinados utilizados durante os testes e desenvolvimento.
+
+---
+
+## tests/
+
+Contém scripts auxiliares utilizados durante o desenvolvimento e validação da solução.
+
+### area-comparison
+
+Comparação entre diferentes áreas monitoradas.
+
+### area-crop.py
+
+Testes de recorte das regiões de interesse.
+
+### dataset.py
+
+Ferramentas auxiliares para validação do dataset.
+
+### pedestrians_test.py
+
+Testes relacionados à detecção de pedestres.
+
+### teste_area.py
+
+Validação das áreas utilizadas pelo sistema.
+
+---
+
+## ⚙️ Instalação
+
+### Pré-requisitos
+
+* Python 3.10 ou superior
+* Git
+* Webcam USB
+* Sistema operacional Linux ou Windows
+
+---
+
+### 1. Clonar o repositório
+
+```bash
+git clone <URL_DO_REPOSITORIO>
+cd computer-vision
+```
+
+---
+
+### 2. Acessar o projeto
+
+```bash
+cd yolo-version
+```
+
+---
+
+### 3. Criar um ambiente virtual
+
+#### Linux
+
+```bash
+python3 -m venv venv
+source venv/bin/activate
+```
+
+#### Windows
+
+```powershell
+python -m venv venv
+venv\Scripts\activate
+```
+
+---
+
+### 4. Instalar as dependências
+
+```bash
+pip install -r requirements.txt
+```
+
+---
+
+### 5. Conectar a câmera
+
+Conecte uma webcam USB ao computador antes de iniciar o sistema.
+
+---
+
+### 6. Executar o sistema
+
+```bash
+cd src
+python main.py
+```
+
+Após a execução, a câmera será aberta e o sistema iniciará a detecção de veículos e pedestres em tempo real.
+
+---
+
+## 🧠 Treinamento do Modelo
+
+Para treinar um novo modelo de detecção de pedestres:
+
+```bash
+cd src
+python train.py
+```
+
+O treinamento utiliza as configurações presentes em:
 
 ```text
-contagem por área
+dataset/data.yaml
 ```
 
-para:
-
-```text
-contagem por contornos
-```
-
-resultando em uma detecção mais estável.
+Ao final do processo, novos pesos serão gerados para utilização no sistema.
 
 ---
 
-# Evolução futura com YOLO
+## 🚀 Desenvolvimento
 
-Uma evolução futura prevista é a utilização do modelo YOLO (You Only Look Once).
+O desenvolvimento deste módulo envolveu a criação de um conjunto de dados próprio para detecção de pedestres na maquete, incluindo a coleta de imagens, rotulação manual dos exemplos e treinamento de um modelo YOLO específico para o cenário do projeto.
 
-Essa abordagem permitiria:
-
-* reconhecimento visual real de veículos;
-* detecção sem imagem base;
-* maior robustez;
-* classificação de objetos.
-
-Entretanto, o uso de YOLO ainda apresenta limitações para o projeto atual:
-
-* maior custo computacional;
-* necessidade de modelos adaptados para visão top-down;
-* desempenho limitado em Raspberry Pi 3.
-
-Por esse motivo, a abordagem clássica baseada em OpenCV permanece como solução principal nesta etapa.
+Após o treinamento, o detector de pedestres foi integrado ao sistema principal juntamente com a detecção de veículos, permitindo a obtenção automática de informações de tráfego em tempo real.
 
 ---
 
-# Integração futura
+## 📅 Cronograma
 
-A arquitetura planejada para o sistema completo é:
-
-```text
-Câmera
-    ↓
-Visão computacional
-    ↓
-Lógica adaptativa
-    ↓
-ESP32
-    ↓
-Controle físico do semáforo
-```
+| Data       | Atividade                                          |
+| ---------- | -------------------------------------------------- |
+| Maio/2026  | Estudos iniciais sobre visão computacional         |
+| Maio/2026  | Configuração do ambiente Python                    |
+| Maio/2026  | Testes iniciais de captura de vídeo                |
+| Maio/2026  | Desenvolvimento dos recortes das áreas monitoradas |
+| Junho/2026 | Construção do dataset de pedestres                 |
+| Junho/2026 | Rotulação manual das imagens                       |
+| Junho/2026 | Treinamento do modelo YOLO                         |
+| Junho/2026 | Integração entre detecção de veículos e pedestres  |
+| Junho/2026 | Geração automática dos dados de tráfego            |
+| Atual      | Ajustes e otimizações do sistema                   |
 
 ---
 
-# Cronograma
+## 👥 Autoria
 
-| Data       | Atividade                                               |
-| ---------- | ------------------------------------------------------- |
-| 10/05/2026 | Definição inicial da arquitetura da visão computacional |
-| 10/05/2026 | Escolha do OpenCV e webcam USB                          |
-| 13/05/2026 | Configuração do ambiente Python no Linux                |
-| 13/05/2026 | Integração da webcam USB                                |
-| 13/05/2026 | Primeiros testes de captura de vídeo                    |
-| 13/05/2026 | Implementação de detecção por contornos                 |
-| 13/05/2026 | Desenvolvimento da abordagem por background subtraction |
-| 13/05/2026 | Implementação da contagem de veículos                   |
-| Futuro     | Integração com ESP32                                    |
-| Futuro     | Avaliação do uso de YOLO                                |
+Projeto desenvolvido como parte do sistema de Semáforos Inteligentes, com foco na aplicação de visão computacional para monitoramento de fluxo urbano em maquetes.
