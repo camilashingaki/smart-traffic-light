@@ -40,6 +40,7 @@ from src.simulation.crossing import Crossing
 from src.simulation.controllers import FixedTimeController
 from src.simulation.simulation_loop import SimulationLoop
 from src.utils.config_loader import load_config
+from src.visualization.fonts import load_ui_font
 from src.visualization.pygame_renderer import CrossingRenderer
 
 # ── Layout ────────────────────────────────────────────────────────────────────
@@ -48,14 +49,28 @@ PLOTS_W    = 560
 WIN_H      = 720
 FPS        = 60
 HISTORY    = 720   # ticks de histórico nos gráficos (~1 hora)
+BANNER_H   = 40    # faixa reservada no topo do painel direito (controlador/cenário)
+LEGEND_Y   = 26    # distância da legenda inferior à base da janela
 
 # ── Cores dos gráficos ────────────────────────────────────────────────────────
 COR_AGENTE    = "#5b8df5"   # azul
 COR_BENCHMARK = "#f56565"   # vermelho
+COR_AG_FILL   = "#2dd4a8"   # verde-azulado — área quando o agente está melhor
+COR_BM_FILL   = "#f56565"   # vermelho claro — área quando o benchmark está melhor
 COR_BG        = "#0f0f1a"
 COR_CARD      = "#12121f"
 COR_BORDER    = "#1e1e35"
 COR_TEXT      = "#c8c8d8"
+COR_TICKS     = "#9ea3bd"   # tick labels com mais contraste que o antigo
+COR_GRID      = "#2a2a48"
+FILL_ALPHA    = 0.20
+LINE_W        = 2.0
+# RGB para os elementos pygame do painel direito
+RGB_AGENTE    = (91, 141, 245)
+RGB_BENCHMARK = (245, 101, 101)
+RGB_MUTED     = (100, 100, 150)
+RGB_BANNER_BG = (26, 26, 44)
+RGB_BANNER_HL = (44, 44, 72)
 
 
 # ── Controlador PPO adaptado para SimulationLoop ──────────────────────────────
@@ -202,8 +217,11 @@ class ComparisonPlots:
         fig_h = height / dpi
         self._fig, self._axes = plt.subplots(3, 1, figsize=(fig_w, fig_h), dpi=dpi)
         self._fig.patch.set_facecolor(COR_BG)
+        # top reserva BANNER_H px (+ folga) para o banner de controlador/cenário
         self._fig.subplots_adjust(
-            left=0.14, right=0.97, top=0.96, bottom=0.06, hspace=0.55
+            left=0.14, right=0.97,
+            top=1.0 - (BANNER_H + 16) / height,
+            bottom=0.085, hspace=0.55,
         )
         self._canvas  = FigureCanvasAgg(self._fig)
         self._surface: pygame.Surface | None = None
@@ -229,43 +247,57 @@ class ComparisonPlots:
         for ax in self._axes:
             ax.clear()
             ax.set_facecolor(bg)
-            ax.tick_params(colors=txt, labelsize=7)
-            for sp in ax.spines.values():
+            ax.tick_params(colors=COR_TICKS, labelsize=8, length=3)
+            # bordas quase invisíveis: só esquerda/baixo, finas e escuras
+            for side, sp in ax.spines.items():
+                sp.set_visible(side in ("left", "bottom"))
                 sp.set_edgecolor(COR_BORDER)
+                sp.set_linewidth(0.6)
 
-        def plot_pair(ax, ag_data, bm_data, titulo, ylabel):
+        def plot_pair(ax, ag_data, bm_data, titulo, ylabel, fmt=".1f"):
             ag = list(ag_data)
             bm = list(bm_data)
             n  = min(len(ticks), len(ag), len(bm))
             if n < 2:
                 return
             t = ticks[:n]
-            ax.plot(t, bm[:n], color=COR_BENCHMARK, lw=1.4,
-                    label=f"Benchmark ({bm[-1]:.1f})")
-            ax.plot(t, ag[:n], color=COR_AGENTE,    lw=1.4,
-                    label=f"Agente ({ag[-1]:.1f})")
+            ax.plot(t, bm[:n], color=COR_BENCHMARK, lw=LINE_W)
+            ax.plot(t, ag[:n], color=COR_AGENTE,    lw=LINE_W)
             ax.fill_between(t, bm[:n], ag[:n],
                             where=[a < b for a, b in zip(ag[:n], bm[:n])],
-                            alpha=0.15, color=COR_AGENTE,
-                            label="Agente melhor")
+                            alpha=FILL_ALPHA, color=COR_AG_FILL, lw=0)
             ax.fill_between(t, bm[:n], ag[:n],
                             where=[a >= b for a, b in zip(ag[:n], bm[:n])],
-                            alpha=0.15, color=COR_BENCHMARK,
-                            label="Benchmark melhor")
-            ax.set_title(titulo, color=txt, fontsize=8, pad=3)
+                            alpha=FILL_ALPHA, color=COR_BM_FILL, lw=0)
+            ax.set_title(titulo, color="white", fontsize=11, pad=6,
+                         fontweight="bold", loc="left")
             ax.set_ylabel(ylabel, color=txt, fontsize=7)
-            ax.legend(fontsize=6, facecolor=COR_CARD, labelcolor=txt,
-                      loc="upper left", framealpha=0.7, ncol=2)
-            ax.grid(alpha=0.25, color=COR_BORDER)
+            ax.grid(alpha=0.5, color=COR_GRID, lw=0.5)
+            ax.set_axisbelow(True)
+
+            # legenda compacta numa linha: fundo translúcido + números em negrito
+            ax.add_patch(plt.Rectangle(
+                (0.015, 0.80), 0.70, 0.17, transform=ax.transAxes,
+                facecolor=COR_CARD, edgecolor=COR_BORDER,
+                alpha=0.78, zorder=4,
+            ))
+            ax.text(0.035, 0.885, f"Agente $\\mathbf{{{ag[-1]:{fmt}}}}$",
+                    transform=ax.transAxes, color=COR_AGENTE,
+                    fontsize=8, va="center", zorder=5)
+            ax.text(0.345, 0.885, "•", transform=ax.transAxes,
+                    color=COR_TICKS, fontsize=8, va="center", zorder=5)
+            ax.text(0.385, 0.885, f"Benchmark $\\mathbf{{{bm[-1]:{fmt}}}}$",
+                    transform=ax.transAxes, color=COR_BENCHMARK,
+                    fontsize=8, va="center", zorder=5)
 
         plot_pair(ax1, m.ag_espera_media, m.bm_espera_media,
                   "Espera Média Acumulada", "segundos")
         plot_pair(ax2, m.ag_violacoes,    m.bm_violacoes,
-                  "Violações de Teto (acumulado)", "contagem")
+                  "Violações de Teto (acumulado)", "contagem", fmt=".0f")
         plot_pair(ax3, m.ag_fila_total,   m.bm_fila_total,
-                  "Tamanho Total das Filas", "agentes")
+                  "Tamanho Total das Filas", "agentes", fmt=".0f")
 
-        ax3.set_xlabel("tick", color=txt, fontsize=7)
+        ax3.set_xlabel("tick", color=COR_TICKS, fontsize=7)
 
         self._canvas.draw()
         raw  = self._canvas.buffer_rgba()
@@ -382,7 +414,6 @@ def main() -> None:
     pygame.display.set_caption(
         f"Semáforo Inteligente — DualAgent vs Benchmark | {scenario_name}"
     )
-    clock = pygame.font.SysFont("monospace", 12)
     fps_clock = pygame.time.Clock()
 
     renderer = CrossingRenderer(cfg=cfg, panel_width=RENDERER_W, panel_height=WIN_H)
@@ -393,7 +424,8 @@ def main() -> None:
     loop.set_speed(1.0)
 
     plot_surface = pygame.Surface((PLOTS_W, WIN_H))
-    font         = pygame.font.SysFont("monospace", 12)
+    font         = load_ui_font(13)
+    font_bold    = load_ui_font(13, bold=True)
 
     def do_reset() -> None:
         nonlocal bench_state
@@ -491,19 +523,31 @@ def main() -> None:
             plot_surface.blit(lbl, (PLOTS_W//2 - lbl.get_width()//2, WIN_H//2))
             screen.blit(plot_surface, (RENDERER_W, 0))
 
-        # Labels de info
+        # Banner superior do painel direito (faixa reservada — fora dos gráficos)
+        pygame.draw.rect(screen, RGB_BANNER_BG,
+                         pygame.Rect(RENDERER_W, 0, PLOTS_W, BANNER_H))
+        pygame.draw.rect(screen, RGB_BANNER_HL,
+                         pygame.Rect(RENDERER_W, BANNER_H - 1, PLOTS_W, 1))
         agente_tipo = "Especialista pico_veic" if agent_ctrl.usando_especialista else "Agente Geral"
-        cor_tipo    = (91, 141, 245) if not agent_ctrl.usando_especialista else (159, 122, 234)
-        lbl_agente  = font.render(f"Controlador: {agente_tipo}", True, cor_tipo)
-        lbl_cen     = font.render(f"Cenário: {scenario_name}", True, (100, 100, 150))
-        screen.blit(lbl_agente, (RENDERER_W + 10, 8))
-        screen.blit(lbl_cen,   (RENDERER_W + 10, 22))
+        cor_tipo    = (159, 122, 234) if agent_ctrl.usando_especialista else RGB_AGENTE
+        lbl_agente  = font_bold.render(f"Controlador: {agente_tipo}", True, cor_tipo)
+        lbl_cen     = font.render(f"Cenário: {scenario_name}", True, RGB_MUTED)
+        screen.blit(lbl_agente, (RENDERER_W + 12, 5))
+        screen.blit(lbl_cen,   (RENDERER_W + 12, 21))
 
-        # Legenda dos gráficos
-        lbl_ag = font.render("— Agente PPO", True, (91, 141, 245))
-        lbl_bm = font.render("— Benchmark (tempo fixo)", True, (245, 101, 101))
-        screen.blit(lbl_ag, (RENDERER_W + 10, WIN_H - 36))
-        screen.blit(lbl_bm, (RENDERER_W + 10, WIN_H - 22))
+        # Legenda inferior centralizada, com bolinhas coloridas
+        lbl_ag = font.render("Agente PPO", True, RGB_AGENTE)
+        lbl_bm = font.render("Benchmark (tempo fixo)", True, RGB_BENCHMARK)
+        dot_r, dot_gap, item_gap = 4, 8, 28
+        total_w = (dot_r * 2 + dot_gap) * 2 + lbl_ag.get_width() + lbl_bm.get_width() + item_gap
+        lx = RENDERER_W + (PLOTS_W - total_w) // 2
+        ly = WIN_H - LEGEND_Y
+        cy = ly + lbl_ag.get_height() // 2
+        pygame.draw.circle(screen, RGB_AGENTE, (lx + dot_r, cy), dot_r)
+        screen.blit(lbl_ag, (lx + dot_r * 2 + dot_gap, ly))
+        lx += dot_r * 2 + dot_gap + lbl_ag.get_width() + item_gap
+        pygame.draw.circle(screen, RGB_BENCHMARK, (lx + dot_r, cy), dot_r)
+        screen.blit(lbl_bm, (lx + dot_r * 2 + dot_gap, ly))
 
         pygame.display.flip()
 

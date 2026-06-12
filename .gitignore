@@ -219,3 +219,6 @@ __marimo__/
 
 # YOLO models
 *.pt
+
+# macOS
+.DS_Store
