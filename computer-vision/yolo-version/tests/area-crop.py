@@ -12,8 +12,8 @@ while True:
         print("Falha ao capturar frame")
         continue
 
-    x1, y1 = 80, 50
-    x2, y2 = 300, 600
+    x1, y1 = 30, 100 #esquerda, topo 
+    x2, y2 = 250, 400 #direita, baixo
 
     frame_crop = frame[y1:y2, x1:x2]
 

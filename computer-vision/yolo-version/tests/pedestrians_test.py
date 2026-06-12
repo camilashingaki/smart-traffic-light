@@ -5,7 +5,7 @@ from area_crop_pedestrian import crop_pedestrian_area
 
 # Modelo YOLO um pouco maior que o atual da main
 #! identificação ta meio ruim
-model = YOLO("yolov8s.pt")
+model = YOLO("../models/pedestrian_model.pt")
 #TODO: base de dados.. o modelo não identifica pessoas de costas somente de frente:(
 
 # Webcam
@@ -72,7 +72,7 @@ while True:
         (20, 50),
         cv2.FONT_HERSHEY_SIMPLEX,
         1.2,
-        (0, 0, 255),
+        (255, 0, 0),
         3
     )
 

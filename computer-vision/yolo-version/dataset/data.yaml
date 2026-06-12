@@ -1,0 +1,13 @@
+train: ../train/images
+val: ../valid/images
+test: ../test/images
+
+nc: 1
+names: ['person']
+
+roboflow:
+  workspace: camilas-workspace-5lpns
+  project: smart-traffic-light-pedestrians
+  version: 2
+  license: CC BY 4.0
+  url: https://universe.roboflow.com/camilas-workspace-5lpns/smart-traffic-light-pedestrians/dataset/2
